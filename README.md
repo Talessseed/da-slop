@@ -33,6 +33,10 @@ For contributions in this repository, there has to be some reason to believe tha
 
 Formalizations do not need to be made available, as long as the human researcher who communicated the result is convinced that the formalization makes sense.
 
+## See also
+
+- [DA Open](https://github.com/suomela/da-open): major open questions in distributed algorithms
+
 ## License
 
 Contributions here are licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
