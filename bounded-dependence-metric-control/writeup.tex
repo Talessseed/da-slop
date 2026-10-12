@@ -1,0 +1,941 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{xurl}
+\usepackage{bookmark}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black, pdftitle={Bounded dependence and metric control: a dimension-one translation and a grid separation}, pdfauthor={AI-generated write-up}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlist{itemsep=0.25em,topsep=0.4em}
+\setcounter{secnumdepth}{-1}
+\setcounter{tocdepth}{1}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\emergencystretch=1.5em
+\title{Bounded dependence and metric control\\[0.4em]\large A dimension-one translation and a grid separation}
+\author{AI-generated write-up}
+\date{12 October 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+A bounded-dependent outcome assigns a random output labeling to each input graph.
+For locality $T$, the joint distribution on any vertex set depends only on its radius-$T$ input neighborhood, and output vectors on sets more than $2T$ apart are independent.
+The outcome need not have a distributed sampling algorithm.
+
+We show that, on bounded-degree graph classes of uniform Assouad--Nagata dimension at most one, such an outcome for a fixed locally checkable labeling problem gives a deterministic LOCAL algorithm in $O((T+\rho+1)\operatorname{polylog}n)$ rounds, provided its global success probability is at least $1-1/n$.
+Here $\rho$ is the verification radius.
+The algorithm constructs the required two-color cover and finite tables without querying the outcome's probabilities.
+
+We also give an LCL on square grids without compass directions.
+Its task is to assign edge bits whose XOR around every unit square is one.
+It has a zero-error outcome with non-signaling locality at most three and dependence range two, but its deterministic LOCAL complexity is $\Theta(\sqrt n)$.
+The non-signaling comparisons for this outcome are required only between grids.
+Thus these restricted assumptions do not give a general polylogarithmic translation on grids.
+The model sections state the size, identifier, and computability assumptions.
+\end{abstract}
+\clearpage
+\tableofcontents
+\clearpage
+\part{Part I: Translation under one-dimensional metric control}
+\section{1. Result and relation to prior work}\label{result-and-relation-to-prior-work}
+
+We prove the following translation.
+On a bounded-degree graph class of uniform Assouad--Nagata dimension at most one, a bounded-dependent outcome of locality \(T\) solving an LCL with global probability at least \(1-1/n\) yields a deterministic LOCAL algorithm with round complexity
+
+\[ O\bigl((T+\rho+1)\operatorname{polylog} n\bigr), \]
+
+where \(\rho\) is the verification radius.
+For a fixed LCL and \(T\ge 1\), this is \(O(T\operatorname{polylog} n)\).
+The algorithm need not sample the outcome or query its probabilities.
+The metric coloring is assumed to exist and is constructed by the algorithm.
+
+More generally, suppose every graph admits, at every integer scale \(r\ge 1\), a two-coloring whose monochromatic \(r\)-components have diameter at most \(Cr+A\), for common known computable integers \(C\ge 1\) and \(A\ge 0\).
+Our bound is
+
+\[ (T+A+\rho+1)(2+\log_2 N)^{O(\log(C+2))}. \]
+
+Here \(N\) is the common size information: either the exact size \(n\), or a polynomial upper bound \(n\le N\le n^c\) for fixed \(c\).
+The exponent has an absolute implicit constant.
+Fixed \(C,A\) give the first statement.
+
+\href{https://arxiv.org/html/2504.05191v2\#S4}{Balliu et al., Definitions 4.2--4.4} define the bounded-dependent outcome model used here.
+Their \href{https://arxiv.org/html/2504.05191v2\#S4.SS1}{Corollary 4.13} gives a general deterministic translation with complexity \(\widetilde O(\sqrt{nT})\) and success strictly greater than \(1-1/n\).
+We use their partial-sampling principle, but obtain the improved class-dependent bound from a two-color metric decomposition.
+Counting failures by component also permits success exactly \(1-1/n\).
+
+The standard coloring formulation of Assouad--Nagata control is given in \href{https://arxiv.org/html/2308.10377v3\#S1.SS4}{Distel, Section 1.4 and Proposition 5}.
+His \href{https://arxiv.org/html/2308.10377v3\#S3}{Theorem 13} supplies linear two-color control for each fixed treewidth bound.
+\href{https://arxiv.org/html/2308.12273v5\#S1.SS1}{Liu independently proves the minor-closed dimension bound}: proper minor-closed weighted graph classes have Assouad--Nagata dimension at most two, and his \href{https://arxiv.org/html/2308.12273v5\#S1.SS2.SSS4}{Theorem 1.7} gives dimension at most one for fixed treewidth.
+Our translation uses dimension-one control; the general dimension-two theorem does not by itself provide the two colors needed here.
+Our construction applies to any class with the stated two-color control.
+\href{https://arxiv.org/abs/2608.16854v1}{d'Amore and Lievonen} obtain a stronger, tree-specific conclusion: subpolynomial bounded dependence gives an \(O(\log n)\) deterministic algorithm on trees.
+
+The algorithmic input from prior work is deterministic network decomposition.
+\href{https://arxiv.org/abs/1907.10937}{Rozhoň and Ghaffari} established polylogarithmic deterministic network decomposition; we use the parameters of \href{https://arxiv.org/html/2410.19516v1\#S1}{Ghaffari and Grunau, Theorem 1.1}: \(O(\log n)\) colors, \(O(\log n)\) diameter, and \(\widetilde O(\log^2 n)\) construction time.
+All other ingredients needed for the translation are proved below.
+
+\section{2. Model and hypotheses}\label{model-and-hypotheses}
+
+\subsection{2.1. Inputs and finite computation}\label{inputs-and-finite-computation}
+
+Graphs are finite, nonempty, simple, undirected, and have maximum degree at most a fixed constant \(\Delta\).
+Vertices have unique IDs from a specified finite range of size polynomial in \(N\), local port numbers, and input labels from a finite alphabet.
+Outputs also belong to a finite alphabet \(\Sigma\).
+Edge and half-edge outputs can be encoded in vertex-output tuples ordered by ports; bounded degree keeps this alphabet finite.
+
+The LOCAL model has synchronous rounds, unbounded message length, and unbounded local memory and computation.
+Every local computation must nevertheless terminate.
+The theorem bounds communication rounds, not sequential computation time.
+
+Let \(\mathcal I_N\) be the allowed input instances with common size information \(N\).
+We use either of these conventions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item \textbf{Exact size:} \(N=n\), and \(\mathcal I_N\) consists of allowed \(N\)-vertex instances.
+\item \textbf{Supplied upper bound:} \(n\le N\le n^c\), where \(c\) is fixed.
+The exact \(n\) is not separately supplied, and \(\mathcal I_N\) contains all allowed instances compatible with that same \(N\).
+\end{enumerate}
+
+A terminating program must produce the complete finite list \(\mathcal I_N\) from \(N\) and the fixed problem description.
+Decidable membership in the promise family suffices: enumerate all candidate graphs of at most \(N\) vertices, with the prescribed finite IDs, ports, and inputs, and test them.
+A merely enumerable promise is insufficient because subsequent searches must know when they have tested every instance.
+All algorithmic bounds, including \(T,k,C,A\), are known computable integers or functions of \(N\).
+
+An LCL \(\Pi\) has verification radius \(\rho\) and finite input and output alphabets.
+Write \(\Pi(G)\) for its valid global outputs, with the input data implicit.
+A verifier's scope is its whole radius-\(\rho\) vertex ball, including coordinates it may ignore.
+A scope is nonempty and has diameter at most \(2\rho\).
+All admissible one-vertex instances are assumed solvable: the success threshold \(1-1/n\) alone says nothing when \(n=1\).
+
+The outcome, the actual \(n\), and the supplied \(N\) always refer to the original whole instance.
+Solving a connected component does not create a new outcome instance or change the size parameter.
+Distances between different connected components are infinite.
+
+\subsection{2.2. Whole-set locality and independence}\label{whole-set-locality-and-independence}
+
+For \(U\subseteq V(G)\), its \textbf{marked radius-\(T\) input view} is the union of the information visible within \(T\) communication rounds of vertices of \(U\), with marks identifying the output coordinates in \(U\).
+This view includes IDs, ports, degrees, input labels, and supplied size information, with the usual boundary-edge convention.
+An extra gathering round can supply boundary information if needed.
+Isomorphisms preserve all these data and identify marked output coordinates.
+
+For every \(G\in\mathcal I_N\), suppose there is a distribution \(\mu_G\) on \(\Sigma^{V(G)}\).
+Invalid outputs are allowed.
+Let \(\mu_{G,U}\) denote its joint marginal on \(U\).
+We require:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item \textbf{Whole-set non-signaling locality:} \(\mu_{G,U}\), including all its probabilities, is determined by the marked radius-\(T\) input view of \(U\).
+Isomorphic marked views in \(\mathcal I_N\) have matching joint marginals.
+\item \textbf{Whole-set bounded dependence:} for arbitrary vertex sets \(U,V\),
+
+\[ d_G(U,V)>k\quad\Longrightarrow\quad \mu_{G,U\cup V}=\mu_{G,U}\otimes\mu_{G,V}. \]
+\item \textbf{Global success:} for \(n=|V(G)|\),
+
+\[ \mu_G(\Pi(G))\ge 1-\frac1n. \]
+\end{enumerate}
+
+The main specialization is \(k=2T\), which is a bounded-dependent outcome of locality \(T\) in Balliu et al.'s terminology.
+If ``\(T\)-dependent'' refers instead to independence beyond distance \(T\), the same theorem applies with \(k=T\) and locality radius at most \(T\).
+
+The sets in both locality conditions may be disconnected.
+In particular, independence is required between a component and a union of other components.
+Pairwise independence of individual vertex outputs, or even pairwise independence of component vectors, does not by itself imply the mutual independence used below.
+A per-verifier success guarantee does not replace global success.
+The probabilities may be irrational and noncomputable; no probability oracle is assumed.
+
+A \(T\)-round randomized LOCAL algorithm with independent private random tapes satisfies the two locality conditions with \(k=2T\): outputs on \(U\) depend only on its radius-\(T\) input view and the tapes there, and radius-\(T\) neighborhoods of sets at distance greater than \(2T\) are disjoint.
+This explains one source of outcomes satisfying the theorem, but the theorem does not assume the outcome can be sampled by a LOCAL algorithm.
+
+\subsection{2.3. Uniform metric control}\label{uniform-metric-control}
+
+For a set \(X\), its weak diameter is
+
+\[ \operatorname{wdiam}_G(X)=\max_{x,y\in X}d_G(x,y). \]
+
+All distances are in the original graph \(G\); shortest paths may leave \(X\).
+The \textbf{\(r\)-components} of \(X\) are the connected components of the graph on \(X\) joining vertices at ambient distance at most \(r\).
+Thus an \(r\)-chain may use ambient paths through vertices outside \(X\).
+
+Assume that for each integer \(r\ge 1\), every allowed graph has a red--blue coloring whose monochromatic \(r\)-components have weak diameter at most
+
+\[ f(r)\le Cr+A. \]
+
+The constants are uniform across the class.
+Uniform Assouad--Nagata dimension at most one supplies this property with \(A=0\) and fixed \(C\), after enlarging \(C\) to an integer.
+The affine version also permits fixed additive control.
+Requiring a graph-dependent control constant separately for each finite graph would not give this theorem.
+
+Restricting a witnessing coloring to a vertex subset preserves its control in the restricted ambient metric: every monochromatic chain in the subset is a chain in the original graph.
+We will use this fact on subsets which need not themselves be admissible LCL instances.
+
+\section{3. Constructing the structural two-coloring}\label{constructing-the-structural-two-coloring}
+
+This section uses only metric control and network decomposition.
+The red and blue colors organize the algorithm and are unrelated to the LCL output alphabet.
+
+\subsection{3.1. Discovering weak-diameter components}\label{discovering-weak-diameter-components}
+
+\textbf{Lemma 1.} Suppose membership in a marked set is locally known, and its \(a\)-components have known weak-diameter bound \(D\).
+In \(O(D+a+1)\) rounds, every marked vertex can find its whole \(a\)-component and its minimum-ID leader.
+
+\textbf{Proof.} The entire component of a vertex \(v\) lies in \(B_G(v,D)\).
+Gather the marked radius-\(3(D+a)+1\) neighborhood.
+This determines exact ambient distances among vertices of \(B_G(v,D)\): two such vertices have a path through \(v\) of length at most \(2D\), so a shortest path lies within radius \(3D\) of \(v\).
+Construct the \(a\)-graph on marked vertices in \(B_G(v,D)\) and find the component of \(v\).
+Every true component vertex and every true component step is present.
+Conversely, each computed step is a true ambient step.
+The computed component is exact.
+Choose its minimum-ID vertex.
+All gathers can run concurrently with unbounded messages. \(\square\)
+
+The same observation lets a leader gather a region of weak diameter \(D\), its fixed-radius neighborhood, and the ambient distance matrix required for a finite search, in time proportional to these radii.
+Induced connectivity is unnecessary.
+
+\subsection{3.2. Extending over separated regions}\label{extending-over-separated-regions}
+
+\textbf{Lemma 2.} Let \(Z\subseteq V(G)\) have a partial red--blue coloring whose monochromatic \(t\)-components have weak diameter at most \(R\), with integer \(t\ge1\) and \(R\ge0\).
+Let \(K_i\subseteq Z\) be disjoint uncolored regions, with locally known region IDs and designated leaders, weak diameter at most \(D\), and
+
+\[ d_G(K_i,K_j)>R+2t\qquad(i\ne j). \]
+
+All regions can be colored concurrently, preserving prescribed colors in \(Z\), in \(O(D+R+t+1)\) rounds.
+The resulting monochromatic \(t\)-components have diameter at most
+
+\[ F_t(R)=(C+2)R+(2C+2)t+C+A. \]
+
+\textbf{Proof.} First consider a finite metric subspace \(X\) with prescribed colors on \(P\subseteq X\), whose monochromatic \(t\)-components have diameter at most \(R\).
+Take an existing two-coloring of \(X\) at scale \(R+2t+1\) and overwrite its colors on \(P\) by their prescribed values.
+Call the unchanged vertices in \(X\setminus P\) anchors.
+
+For a final red \(t\)-chain, consecutive anchors are at distance at most \(R+2t\): the prescribed red vertices between them belong to one old red \(t\)-component.
+If no prescribed vertex is between them, their distance is at most \(t\).
+Hence all anchors of a final red component lie in one base red \((R+2t+1)\)-component, whose diameter is at most \(f(R+2t+1)\).
+Every non-anchor in a component with an anchor is at distance at most \(R+t\) from an anchor, by following the chain to its first anchor.
+The component diameter is therefore at most
+
+\[ f(R+2t+1)+2(R+t)\le F_t(R). \]
+
+A component with no anchor lies in an old component and has diameter at most \(R\le F_t(R)\).
+The argument for blue is identical.
+This proves existence of an extension on \(X\).
+
+For a current region \(K\), let \(P_K\) be the union of all complete old monochromatic \(t\)-components within distance \(t\) of \(K\), of either color.
+If \(v\) leads \(K\), then
+
+\[ K\cup P_K\subseteq B_G(v,D+R+t). \]
+
+The leader gathers radius \(3(D+R+t)+1\).
+Region marks identify \(K\); working colors and the old diameter bound identify the complete components in \(P_K\); the gathered graph determines ambient distances in \(K\cup P_K\).
+The restriction of metric control to this subspace proves that some coloring of \(K\) extends \(P_K\) with bound \(F_t(R)\).
+The leader enumerates all two-colorings of \(K\) and selects the first passing the component-diameter test.
+The search is finite and has a solution.
+
+An old component cannot touch two current regions within distance \(t\): its diameter would imply their distance is at most \(t+R+t\).
+There is also no direct \(t\)-step between regions.
+A new monochromatic chain cannot consequently connect two current regions through old vertices.
+Every changed component lies in some \(K\cup P_K\), where its diameter was tested, and untouched components retain their old bound.
+The local choices are compatible globally.
+Gathering and distributing costs \(O(D+R+t+1)\) rounds.
+Colors outside \(Z\) are not prescribed coordinates of this operation; all communication still uses \(G\). \(\square\)
+
+\subsection{3.3. Halving a palette}\label{halving-a-palette}
+
+Set
+
+\[ B=4C+8,\qquad M=B^4. \]
+
+If \(R\ge t\), \(R\ge A\), and \(R\ge1\), then
+
+\[ F_t(R)\le(4C+5)R\le BR. \]
+
+\textbf{Lemma 3.} Suppose \(q\ge4\) is divisible by four, and a \(q\)-coloring has monochromatic \(a\)-components of weak diameter at most \(D\), where \(a=Mt\) and \(t\ge A+1\).
+In \(O(D+a)\) rounds it can be replaced by a \(q/2\)-coloring whose monochromatic \(t\)-components have diameter at most \(a\).
+
+\textbf{Proof.} Partition the old color names into groups of four.
+For one group, let \(Z\) be its vertices.
+Each vertex saves its old color and old monochromatic \(a\)-component ID, using Lemma 1.
+Erase the working colors on \(Z\).
+Process its four old color classes in order, treating their saved components as the current regions in Lemma 2.
+
+Use \(R_i=B^it\) as the claimed component-diameter bound after \(i\) phases, with \(R_0=t\) for the empty coloring.
+The preceding inequality gives \(R_{i+1}\) after the next phase.
+Before each phase \(R_i\le B^3t\).
+Distinct saved components of the current old color are at distance greater than \(a\), and
+
+\[ a=B^4t>B^3t+2t, \]
+
+since \(B\ge12\).
+Lemma 2 therefore applies.
+After four phases the bound is \(B^4t=a\).
+
+Run all groups concurrently, giving each group its own pair of new color names.
+Their vertex sets are disjoint, messages can be bundled, and disjoint new palettes prevent a monochromatic component from crossing groups.
+Component discovery and each of four phases cost \(O(D+a)\), with no factor for the number of groups. \(\square\)
+
+\subsection{3.4. From network decomposition to two colors}\label{from-network-decomposition-to-two-colors}
+
+Fix computable network-decomposition guarantees \(Q=O(2+\log N)\) colors, \(d=O(2+\log N)\) weak diameter, and \(P=(2+\log N)^{O(1)}\) rounds, available on arbitrary graphs.
+The standard construction can use the supplied polynomial size bound and ID range.
+Pad \(Q\) to a power of two with \(Q\ge4\).
+The guarantees do not depend on the maximum degree of the graph on which decomposition is run.
+
+For a positive integer \(r\), one communication round on the power graph \(G^r\) can be simulated in \(O(r)\) rounds on \(G\) by relaying messages, including the initial discovery of power-graph neighbors and ports.
+A decomposition cluster of weak diameter \(d\) in \(G^r\) has weak diameter at most \(rd\) in \(G\).
+Distinct clusters of the same decomposition color are at distance greater than \(r\) in \(G\).
+
+\textbf{Lemma 4.} For any integer \(s\ge A+1\), a deterministic LOCAL algorithm constructs a two-coloring whose monochromatic \(s\)-components have diameter at most \(D=Ms\), in
+
+\[ s(2+\log_2N)^{O(\log(C+2))} \]
+
+rounds, without a supplied witnessing coloring.
+
+\textbf{Proof.} Put
+
+\[ h=\log_2(Q/2),\qquad r=M^hs. \]
+
+Compute a network decomposition of \(G^r\) and color vertices by cluster color.
+Every monochromatic \(r\)-component is contained in one cluster, so its diameter is at most \(D_0=rd\).
+
+Apply Lemma 3 for \(h\) passes.
+After pass \(j\), there are \(Q/2^j\) color names, the component scale is \(r/M^j\), and, for \(j\ge1\), the diameter bound is \(r/M^{j-1}\).
+Each target scale is at least \(s\ge A+1\).
+The final palette has two colors, scale \(s\), and diameter \(Ms\).
+
+The first pass costs \(O(r(d+1))\).
+Subsequent costs form a geometric sum \(O(r)\), because both input diameter and scale decrease geometrically.
+Including the initial decomposition, the total is
+
+\[ O\bigl(r(P+d+1)\bigr). \]
+
+Finally,
+
+\[ r=s(Q/2)^{\log_2M},\qquad \log_2M=4\log_2(4C+8)=O(\log(C+2)). \]
+
+Substitution gives the bound.
+Every stage has a common schedule determined by known bounds; empty colors simply use their allotted time.
+No global termination detection is needed.
+Metric control is applied only in the original ambient metric, never to \(G^r\). \(\square\)
+
+\section{4. Independent red choices and component obstructions}\label{independent-red-choices-and-component-obstructions}
+
+Choose
+
+\[ s=1+\max\{k,2\rho,A,1\},\qquad D=Ms, \]
+
+and construct the coloring from Lemma 4.
+Thus \(s\ge2\) and \(s>k,2\rho\).
+
+Solve each ordinary connected component with at most two vertices directly.
+It can gather its entire input and search for a valid labeling in \(O(\rho+1)\) rounds.
+For \(n\ge2\), global success is positive and hence such a labeling exists; for \(n=1\), use the explicit solvability assumption.
+Choose the first solution in ID and alphabet order.
+No verifier crosses between ordinary connected components.
+Keep the original \(G,n,N\) and omit these solved components from the following objective.
+
+Let \(U_1,\ldots,U_m\) be the remaining red \(s\)-components.
+Introduce independent random variables \(Z_i\) taking output patterns on \(U_i\), with law \(\mu_{G,U_i}\).
+These variables are whole-component patterns, not independent choices for individual vertices.
+
+Their product law agrees with the original red marginal:
+
+\[ \mu_{G,\bigcup_iU_i}=\bigotimes_i\mu_{G,U_i}. \]
+
+Indeed, \(U_j\) is at distance greater than \(s>k\) from the union of all earlier components.
+Apply whole-set independence to those two sets and induct on \(j\).
+This proves mutual independence, rather than assuming it from pairwise component independence.
+
+Assign every remaining verifier whose scope contains blue vertices to the unique blue \(s\)-component containing those vertices.
+Assign every red-only verifier to the unique red \(s\)-component containing its scope.
+These assignments are well defined because scope diameter is at most \(2\rho<s\).
+
+For each remaining structural component \(K\), define a zero--one obstruction \(E_K\):
+
+\begin{itemize}
+\tightlist
+\item For red \(K\), it is one if some assigned red-only verifier rejects its chosen pattern.
+\item For blue \(K\), it is one if no labeling of \(K\) satisfies all assigned verifiers with the red labels fixed.
+\end{itemize}
+
+If no verifier is assigned to \(K\), set \(E_K=0\).
+Blue feasibility is a finite search over \(\Sigma^K\).
+Let
+
+\[ F=\sum_KE_K,\qquad b=\#\{\text{remaining structural components}\}. \]
+
+Then \(F=0\) precisely when all chosen red labels admit a valid completion.
+If every blue search succeeds, combine the passing patterns: no verifier reads blue variables from two components, and red-only checks pass.
+Conversely, any valid completion supplies passing patterns for all blue searches and satisfies all red-only checks.
+
+\textbf{Lemma 5.} The true product law of the red variables satisfies
+
+\[ \mathbb E[F]\le1-\frac1N<1 \]
+
+when \(N\ge2\).
+
+\textbf{Proof.} For each \(K\), a valid original sample makes \(E_K=0\) on its red restriction: its blue labels witness feasibility if \(K\) is blue.
+The law of that red restriction is our product law.
+Therefore
+
+\[ \Pr(E_K=1)\le\frac1n, \qquad \mathbb E[F]\le\frac bn. \]
+
+No independence between the indicators is used.
+
+If remaining vertices exist, at least one remaining ordinary connected component has at least three vertices, hence contains a path of three distinct vertices.
+Its three vertices have pairwise distances at most two.
+Two have the same structural color; since \(s\ge2\), those two lie in one monochromatic \(s\)-component.
+Thus at least one part of the structural partition contains two vertices.
+If \(n'\) vertices remain, \(b\le n'-1\le n-1\).
+Consequently
+
+\[ \mathbb E[F]\le\frac{n-1}{n}=1-\frac1n\le1-\frac1N. \]
+
+If no vertices remain, \(F=0\) and the bound also holds.
+The exact-size case \(N=1\) was already solved. \(\square\)
+
+Grouping by component is essential to this endpoint argument.
+Counting one obstruction per verifier could give \(n\) terms, leaving only \(\mathbb E[F]\le1\) at success exactly \(1-1/n\).
+
+\section{5. Computing usable probability tables without an oracle}\label{computing-usable-probability-tables-without-an-oracle}
+
+The true red marginals prove that suitable probability tables exist; they need not be computable.
+We now synthesize different rational tables, using only a finite search.
+
+\textbf{Lemma 6.} For \(N\ge2\), every vertex can compute the same finite table assigning a dyadic probability vector to each marked radius-\(T\) input type of a remaining red component, such that the resulting independent red choices satisfy
+
+\[ \mathbb E[F]\le1-\frac1{2N} \]
+
+on every instance in \(\mathcal I_N\).
+
+\textbf{Proof.} Generate the complete instance list and simulate the deterministic structural construction and preprocessing on each instance.
+List all remaining red components and their marked radius-\(T\) input types.
+Structural colors select which sets occur; they are not extra marks in the input type used by non-signaling locality.
+Canonicalize each finite type, with its marked vertices ordered by ID, and list all patterns on those vertices.
+There are finitely many types and patterns.
+
+For each integer \(a\ge1\), enumerate all tables whose entries are nonnegative multiples of \(2^{-a}\) and sum to one for each type.
+A common denominator suffices for every type.
+Test each table on every listed input.
+For an input, enumerate all tuples of component patterns, compute the integer \(F\) by the local-verifier and blue-feasibility tests, and calculate its expectation using the candidate product probabilities.
+This is a finite rational computation.
+Accept the first table satisfying the displayed inequality for every instance.
+Inputs already solved in preprocessing have \(F=0\).
+
+To prove termination, whole-set locality supplies a well-defined true probability vector for each type.
+Lemma 5 gives a margin of at least \(1/N\) below one on every instance.
+Each tested expectation has the form
+
+\[ \sum_{z_1,\ldots,z_m} F(z_1,\ldots,z_m)\prod_{i=1}^mp_{\tau_i}(z_i), \]
+
+where \(\tau_i\) is the component's type.
+This is a continuous polynomial in finitely many table entries, including when types repeat.
+Since there are finitely many instances, sufficiently accurate simultaneous approximations of all true vectors change every expectation by less than \(1/(2N)\).
+
+Dyadic probability vectors can approximate each finite vector arbitrarily closely: round down all but one coordinate at a sufficiently large denominator and put the remaining mass in the last coordinate.
+The last coordinate is nonnegative and all coordinate errors tend to zero.
+Thus some enumerated table passes.
+Every candidate test terminates, and a passing candidate exists, so the search terminates.
+It uses no true probability values, no unknown actual graph, and no communication.
+
+All vertices use the same parameters, finite instance list, and enumeration order.
+A red leader gathers its marked radius-\(T\) input view and looks up its table entry.
+Matching occurrences have the same coordinates under view isomorphisms. \(\square\)
+
+The synthesized tables need not reproduce the original marginals or extend to a global non-signaling law.
+Only their product law and tested expectation bound are used.
+Repeated occurrences of one type use the same probability vector but are independent random variables.
+This is a single uniform algorithm across sizes, not size-dependent uncomputable advice.
+
+\section{6. Deterministically fixing the red variables}\label{deterministically-fixing-the-red-variables}
+
+\textbf{Lemma 7 (local conditional expectation).} Suppose finite independent variables with rational probability tables are located at vertices of an \(n\)-vertex graph.
+Zero--one functions \(E_v\) are located at designated vertices.
+For each \(E_v\), all its variable locations, function description, and probability tables can be learned within radius \(L\ge1\).
+If \(\mathbb E[\sum_vE_v]<1\), then every variable can be fixed deterministically so that all \(E_v=0\) in
+
+\[ O\bigl(L[P+Q(d+1)]\bigr)=L\operatorname{polylog}N \]
+
+rounds.
+
+\textbf{Proof.} Compute a network decomposition of \(G^{2L}\) in \(O(LP)\) physical rounds.
+Clusters have weak diameter at most \(2Ld\) in \(G\), and distinct clusters with one color are at distance greater than \(2L\).
+
+Process decomposition colors sequentially.
+In a current cluster \(W\), the minimum-ID leader gathers its variables and every indicator depending on one of them, with that indicator's function description, all its needed probability tables, and already fixed values.
+An affected indicator is within \(L\) of a variable in \(W\), and all its variable locations are within a further \(L\).
+This data can be gathered and results distributed in \(O(L(d+1))\) rounds, using ambient paths even outside \(W\).
+
+The leader enumerates positive-probability assignments to the unfixed variables in \(W\).
+For each candidate, compute exactly the conditional expectation of the sum of affected indicators, holding prior choices fixed.
+The weighted average over candidates equals its value before fixing \(W\).
+Some candidate does not increase this expectation; choose the first such candidate and distribute its values.
+All comparisons are finite sums of rational numbers.
+
+Two current clusters cannot affect the same indicator: such an indicator would have variable locations in both clusters within distance \(L\) of its center, contradicting the clusters' separation greater than \(2L\).
+Furthermore, fixing a cluster does not alter expectations of unaffected indicators, since unassigned coordinates retain their product law.
+Adding the inequalities for concurrently acting clusters therefore shows that the total conditional expectation does not increase.
+
+After all \(Q\) color stages every variable is fixed.
+The objective is now a nonnegative integer still strictly below one, and hence equals zero.
+There are \(Q\) stages of \(O(L(d+1))\) rounds plus the initial decomposition. \(\square\)
+
+For our LCL, locate each red variable at its component leader, and \(E_K\) at the leader of \(K\).
+A blue indicator may depend on several red variables, as different verifiers assigned to that blue component can touch different red components.
+This causes no difficulty.
+
+If a verifier assigned to blue \(K\) reads a red vertex \(u\) in \(U\), then some blue vertex \(v\in K\) lies in the same scope and \(d_G(u,v)\le2\rho\).
+Each component leader is within \(D\) of each of its vertices.
+The two leaders are consequently at distance at most \(2D+2\rho\).
+Recovering the complete red components and their marked radius-\(T\) views requires a further \(O(D+s+T+1)\) radius, by Lemma 1 and the ambient-distance gathering argument.
+Verifier descriptions, boundary inputs, and structural marks can be recovered within the same order of radius.
+A sufficient common choice is
+
+\[ L=20(D+s+T+\rho+1). \]
+
+Thus the function describing \(E_K\), its variable locations, and rational tables from Lemma 6 are locally recoverable as required by Lemma 7.
+There is no bound on the cardinality of a component, and none is needed with unbounded message size and local computation.
+
+Use Lemma 7 to fix all red patterns with \(F=0\).
+Distribute these patterns.
+Each blue leader now executes its finite feasibility search, chooses the first passing pattern, and distributes it.
+Every blue indicator vanishes, so every search succeeds.
+No verifier reads blue coordinates from two components.
+Every assigned verifier therefore accepts, and the already solved ordinary connected components remain valid.
+The combined output belongs to \(\Pi(G)\).
+
+All conditioning in this construction concerns the newly introduced product distribution.
+We never condition \(\mu_G\) on global success or on the chosen red outputs.
+In particular, we do not assume independence of blue outputs after revealing red outputs.
+
+\section{7. Round bound and translation theorem}\label{round-bound-and-translation-theorem}
+
+Combining the construction above proves the following precise statement.
+
+\textbf{Theorem 8.} Under the model, effectiveness, metric-control, whole-set locality, bounded-dependence, and global-success hypotheses of Section 2, there is a uniform deterministic LOCAL algorithm solving \(\Pi\) in
+
+\[ (T+s)(2+\log_2N)^{O(\log(C+2))}, \qquad s=1+\max\{k,2\rho,A,1\}, \]
+
+rounds.
+It requires neither a probability oracle nor a supplied metric decomposition.
+The success assumption includes equality at \(1-1/n\).
+
+\textbf{Proof of the round bound.} Lemma 4 costs \(O(r(P+d+1))\), with \(r=M^hs\).
+Lemma 1 and input gathering recover the structural components and relevant marked views in \(O(D+s+T+\rho+1)\) rounds.
+Table synthesis is a terminating local computation using no rounds.
+Lemma 7 and final completion cost
+
+\[ O\bigl((D+s+T+\rho+1)[P+Q(d+1)]\bigr). \]
+
+Since \(D=Ms\le r\), \(s>\rho\), \(Q,d,P\) are polylogarithmic, and \(M=(4C+8)^4\), the total is the displayed bound.
+In particular, factors polynomial in \(C\) can be absorbed into the exponent \(O(\log(C+2))\) because \(2+\log_2N\ge2\). \(\square\)
+
+For a bounded-dependent outcome of locality \(T\), set \(k=2T\).
+Then \(s=O(T+A+\rho+1)\) and
+
+\[ \operatorname{DetLOCAL}(\Pi) \le (T+A+\rho+1)(2+\log_2N)^{O(\log(C+2))}. \]
+
+Uniform Assouad--Nagata dimension at most one has fixed \(C\) and \(A=0\).
+Fixed affine control also suffices.
+Since \(n\le N\le n^c\), the factors \(2+\log_2N\) and \(2+\log_2n\) differ only by a constant factor.
+This gives
+
+\[ \operatorname{DetLOCAL}(\Pi) =O\bigl((T+\rho+1)\operatorname{polylog}n\bigr) \]
+
+for fixed control constants.
+The resulting algorithm finds a valid output; it need not preserve the original law or even belong to its support.
+
+\section{8. Exact-support variant}\label{exact-support-variant}
+
+There is also a probability-free version.
+Suppose for each \(G\in\mathcal I_N\) there is a nonempty set \(S_G\subseteq\Pi(G)\) whose projection
+
+\[ S_{G,U}=\{x|_U:x\in S_G\} \]
+
+is determined by the marked radius-\(T\) input view, and which factorizes on arbitrary separated sets:
+
+\[ d_G(U,V)>k\quad\Longrightarrow\quad S_{G,U\cup V}=S_{G,U}\times S_{G,V}. \]
+
+Then a deterministic algorithm solves \(\Pi\) in
+
+\[ O(T)+s(2+\log_2N)^{O(\log(C+2))} \]
+
+rounds, with the same \(s\) as Theorem 8.
+
+\textbf{Proof.} First synthesize a finite support table.
+For each listed instance compute its finite set \(\Pi(G)\) by testing all output labelings.
+Enumerate all choices of a nonempty subset of \(\Pi(G)\) for every instance.
+Test each candidate for factorization on every pair of separated sets and for projection equality on every pair of isomorphic marked radius-\(T\) input views.
+All tests are finite; the assumed support family is a passing candidate.
+The first passing table is therefore computable from the common parameters and instance list without communication.
+A component leader can recover its projection from its marked view, since tested locality makes all matching occurrences agree.
+
+Construct the structural coloring at scale \(s\).
+Each red leader gathers its marked radius-\(T\) view and chooses any pattern from its projected support.
+Applying factorization to a red component and the union of all previous red components shows that all these choices jointly belong to \(S_{G,\text{red}}\).
+Thus some \(x\in S_G\subseteq\Pi(G)\) agrees with every chosen red label.
+
+Every red-only verifier already accepts.
+Assign each verifier involving blue vertices to its unique blue component.
+That component's leader gathers its assigned constraints and fixed red boundary and searches for a passing labeling.
+The restriction of \(x\) witnesses that the search succeeds.
+Independent blue completions satisfy every verifier, as in Section 6.
+Gathering the red views and blue constraints costs \(O(D+s+T+\rho+1)\) beyond the structural construction; only the possible \(O(T)\) term is not covered by its scale. \(\square\)
+
+A zero-error distribution satisfying the whole-set locality and dependence hypotheses provides such supports.
+With positive error, taking the full support may include invalid outputs; the probability-free argument cannot simply be applied to it.
+Conditioning the outcome on success also need not preserve independence or locality.
+Sections 4--6 avoid both problems.
+\clearpage
+\part{Part II: The XOR-face separation on square grids without compass directions}
+\section{1. The problem and the result}\label{grid-problem-and-result}
+
+Let \(n\ge1\) be a perfect square and let
+\[ G_n=P_{\sqrt n}\mathbin{\square}P_{\sqrt n}. \]
+Here \(P_{\sqrt n}\) is the path on \(\sqrt n\) vertices, so \(G_n\) has \(n\) vertices and a boundary.
+The input graph has no compass directions and no coordinate labels.
+For the proof, we may draw its vertices at \((x,y)\in\{0,\ldots,\sqrt n-1\}^2\).
+These coordinates are not given to the algorithm.
+
+Each vertex knows its degree and has local port numbers \(1,\ldots,\deg(v)\) on its incident edges.
+The port numbers at the two ends of an edge may be different.
+Vertices have distinct identifiers in \([n^C]\), for a fixed constant \(C\ge1\), and may know the exact value of \(n\).
+Correctness is required for every choice of identifiers and port numbers.
+Messages and local computation are unrestricted, as in Part I.
+We use input views that retain the original degrees and port numbers; another convention may change the round bounds by an additive constant.
+
+Each vertex outputs four bits, one for each possible port.
+A slot without an incident edge must contain zero.
+For an edge \(e=uv\), write \(b_{u,e}\) and \(b_{v,e}\) for the bits output at its two ends.
+A valid output must satisfy the following conditions:
+\begin{enumerate}
+\item The endpoints agree: \(b_{u,e}=b_{v,e}\) for every edge \(e=uv\).
+Write \(X_e\) for their common value.
+\item For every four-cycle \(Q\), the XOR of its four edge bits is one:
+\begin{equation} \sum_{e\in E(Q)}X_e=1 \quad\text{in }\mathbb F_2. \label{eq:grid-face} \end{equation}
+\end{enumerate}
+In a square grid, every four-cycle is the boundary of a unit square.
+We call this the \textbf{XOR-face problem}.
+A vertex can check endpoint agreement on its incident edges within radius one, and it can check every four-cycle containing it within radius two.
+Thus the problem is an LCL with verification radius two and output alphabet \(\{0,1\}^4\).
+
+\begin{figure}[ht]
+\centering
+\setlength{\unitlength}{1pt}
+\begin{picture}(245,130)
+\put(55,25){\line(1,0){125}}
+\put(55,25){\line(0,1){80}}
+\put(55,105){\line(1,0){125}}
+\put(180,25){\line(0,1){80}}
+\put(55,25){\circle*{4}}
+\put(180,25){\circle*{4}}
+\put(180,105){\circle*{4}}
+\put(55,105){\circle*{4}}
+\put(45,13){\makebox(0,0){\(v_0\)}}
+\put(190,13){\makebox(0,0){\(v_1\)}}
+\put(190,117){\makebox(0,0){\(v_2\)}}
+\put(45,117){\makebox(0,0){\(v_3\)}}
+\put(118,13){\makebox(0,0){\(X_{e_1}\)}}
+\put(202,65){\makebox(0,0){\(X_{e_2}\)}}
+\put(118,117){\makebox(0,0){\(X_{e_3}\)}}
+\put(33,65){\makebox(0,0){\(X_{e_4}\)}}
+\end{picture}
+\caption{The two endpoints store the same bit on each edge, and \(X_{e_1}+X_{e_2}+X_{e_3}+X_{e_4}=1\).
+The drawing does not add directions or coordinates to the input.}
+\label{fig:grid-face}
+\end{figure}
+
+An outcome assigns a joint distribution of outputs to each input graph.
+It is \textbf{non-signaling with locality \(s\) on grids} if matching radius-\(s\) input views around two marked sets give the same joint distribution of all marked outputs.
+The matching must preserve the marked vertices, graph edges, identifiers, port numbers, degrees, and supplied size information.
+The marked sets may be large or disconnected.
+Only comparisons between square-grid inputs are required here.
+
+The outcome has \textbf{dependence range two} if output vectors on any finite collection of vertex sets at pairwise distance greater than two are mutually independent.
+These are the locality and independence conditions of \href{https://arxiv.org/html/2504.05191v2\#S4}{Balliu et al., Definitions 4.2--4.4}, with the comparisons restricted to grids.
+In the terminology of Part I, an outcome with these bounds is bounded-dependent with locality three, since independence beyond distance two also implies independence beyond distance six.
+
+\textbf{Theorem (grid separation).}
+On square grids without compass directions, the XOR-face problem has a zero-error outcome with non-signaling locality at most three and dependence range two.
+Its deterministic LOCAL complexity is \(\Theta(\sqrt n)\), even with exact size information and unique identifiers.
+The asymptotic statement is over perfect-square values of \(n\).
+
+The rest of Part II proves all parts of this statement.
+If \(n=1\), the only output is four zero bits, so the outcome claims are immediate.
+The geometric arguments below concern grids with \(\sqrt n\ge2\).
+
+\section{2. A distribution over valid outputs}\label{grid-distribution}
+
+Let \(\Omega(G)\) be the set of edge-bit assignments satisfying \eqref{eq:grid-face} on every unit square of \(G\).
+We define the outcome to be the uniform distribution on \(\Omega(G)\), with each edge bit copied to its two endpoint slots and all unused slots set to zero.
+This definition uses only the graph and its four-cycles.
+It does not choose a compass orientation.
+We now prove that \(\Omega(G)\) is nonempty and describe this uniform distribution using independent vertex bits.
+
+Choose coordinates only for this proof.
+Define a fixed edge labeling \(\eta\) by
+\begin{equation} \eta_{uv}=\begin{cases}0,&uv\text{ is horizontal},\\x\bmod2,&uv\text{ is vertical in column }x.\end{cases} \label{eq:grid-reference} \end{equation}
+Around a unit square, the two horizontal bits are zero and the two vertical bits are the parities of consecutive columns.
+Their XOR is one, so \(\eta\in\Omega(G)\).
+
+Let \(Z_v\), one for each vertex, be independent uniform bits and set
+\begin{equation} X_{uv}=\eta_{uv}+Z_u+Z_v. \label{eq:grid-random-bits} \end{equation}
+All additions are modulo two.
+Around a unit square, each vertex bit occurs on two incident edges and therefore cancels.
+The remaining sum is the sum of the four \(\eta\)-bits, which is one.
+Thus every sample is valid.
+
+\textbf{Claim.}
+Formula \eqref{eq:grid-random-bits} gives the uniform distribution on \(\Omega(G)\).
+
+\textbf{Proof.}
+Fix a valid edge labeling \(X\) and write \(a_e=X_e+\eta_e\).
+The XOR of \(a_e\) around each unit square is zero.
+Consider a simple cycle in the grid drawing and add these equations over all unit squares inside it.
+Every interior edge appears twice and cancels, leaving XOR zero on the cycle boundary.
+Every closed walk can be split into simple cycles and pairs of oppositely traversed edges, so it also has XOR zero.
+
+Choose a root \(o\), and let \(z_v\) be the XOR of \(a_e\) along a path from \(o\) to \(v\).
+Two such paths form a closed walk, so they give the same value.
+For every edge \(uv\), this definition gives \(z_u+z_v=a_{uv}\).
+Consequently, every valid \(X\) has the form \(\eta_{uv}+z_u+z_v\).
+
+If two vertex-bit assignments give the same edge labeling, their difference has equal values at adjacent vertices.
+The grid is connected, so their difference is constant on all vertices.
+Hence each valid edge labeling has exactly two vertex-bit assignments producing it, and those two assignments are complements.
+Independent uniform vertex bits give every one of the \(2^n\) assignments the same probability.
+They therefore give every valid edge labeling the same probability, as claimed.
+\(\square\)
+
+Although \eqref{eq:grid-random-bits} uses coordinates in its proof, its output distribution is the coordinate-free uniform distribution just defined.
+In particular, changing the coordinate origin, rotating the grid, or reflecting it leaves that distribution unchanged.
+This does not give a fast sampling algorithm: the reference labeling \(\eta\) is not supplied to the vertices.
+
+\section{3. Independence beyond distance two}\label{grid-independence}
+
+Fix one input graph and one reference labeling \(\eta\).
+The outputs at a set \(U\) depend only on the random bits at vertices in \(N_1(U)\), because every stored edge bit uses only its two endpoint bits.
+If two marked sets are at distance greater than two, their radius-one neighborhoods are disjoint.
+The same holds for any finite collection of sets at pairwise distance greater than two.
+Their output vectors use disjoint collections of independent vertex bits and are therefore mutually independent.
+This proves dependence range two.
+
+Independence within one input does not by itself prove non-signaling between different inputs.
+That comparison is proved next.
+
+\section{4. Non-signaling for arbitrary marked sets}\label{grid-nonsignaling}
+
+Let \(U\subseteq V(G)\) and \(U'\subseteq V(G')\) be marked sets in two square-grid inputs.
+Suppose \(\varphi\) is an isomorphism between their radius-three input views, preserving all the input data listed in Section 1.
+We prove that the entire output vector on \(U\) has the same distribution as the corresponding output vector on \(U'\).
+This includes sets whose vertices are far apart.
+
+Let \(F\) be the set of all edges incident to vertices of \(U\), and let \(W\) be their endpoints.
+The marked outputs consist of the bits on these edges, with repetitions when both endpoints are marked, together with fixed zero padding.
+The view isomorphism maps \(F\) to the corresponding edge set \(F'\) in \(G'\).
+Different connected components of the graph \((W,F)\) have disjoint endpoint sets.
+We will compare the edge labels on each such component jointly.
+
+\subsection{4.1. What the graph tells us about directions}
+
+For \(v\in W\), the radius-three view of \(U\) contains the full radius-two neighborhood of \(v\), since \(v\) is at distance at most one from \(U\).
+This neighborhood determines whether two edges at \(v\) are perpendicular or opposite in the grid drawing.
+Indeed, two distinct neighbors of \(v\) have a common neighbor other than \(v\) exactly when they lie in perpendicular directions.
+That common neighbor completes a unit square.
+Neighbors in opposite directions have no such second common neighbor.
+These statements also hold at the boundary of a full square grid.
+
+Use coordinates in both graph drawings for the proof.
+At each \(v\in W\), the isomorphism therefore maps its incident coordinate directions by a rotation or reflection.
+Write \(S_v\) for the corresponding linear map of the two coordinate axes.
+It may exchange the axes or reverse their signs.
+This map is unique: every vertex has two perpendicular incident edges, and the images of those two directions determine it.
+The perpendicular and opposite relations then determine the images of all other incident directions.
+
+We claim that \(S_v=S_w\) whenever \(vw\in F\).
+The edge \(vw\) lies on at least one unit square, which we write in cyclic order as \(v,w,b,a\).
+The whole square is visible, and its image is another unit square.
+Let \(d=\chi(w)-\chi(v)\) be the coordinate direction from \(v\) to \(w\).
+At \(v\), its image direction is \(S_vd\).
+At \(w\), the reverse edge has direction \(-d\) and image direction \(S_w(-d)=-S_wd\), so the direction from \(\varphi(v)\) to \(\varphi(w)\) is also \(S_wd\).
+Thus the two maps agree on \(d\).
+They also agree on the perpendicular direction: the directions from \(v\) to \(a\) and from \(w\) to \(b\) are equal, and their image directions are equal.
+They agree on two perpendicular directions and hence are the same linear map.
+
+It follows that, on each connected component \(K\) of \((W,F)\), there is one rotation or reflection \(S_K\) and one integer translation \(c_K\) such that
+\begin{equation} \chi'(\varphi(v))=S_K\chi(v)+c_K \qquad(v\in K), \label{eq:grid-coordinate-map} \end{equation}
+where \(\chi\) and \(\chi'\) are the coordinate maps in the two drawings.
+To see the translation, choose one vertex of \(K\) and then follow paths in \(K\).
+On every edge the coordinate difference is transformed by the same \(S_K\), so \(\chi'(\varphi(v))-S_K\chi(v)\) is constant on the component.
+Thus each observed-edge component is translated, rotated, or reflected as a whole, even though the input contains no compass directions.
+
+\subsection{4.2. Matching all observed edge bits}
+
+Choose reference labelings \(\eta\) and \(\eta'\) by \eqref{eq:grid-reference} in the two drawings.
+Fix one component \(K\), write \(c_K=(a,b)\), and put \(\epsilon=a\bmod2\).
+In the following bit calculations, coordinates are reduced modulo two.
+We will choose fixed bits \(g_v\) so that
+\begin{equation} \eta_{uv}+\eta'_{\varphi(u)\varphi(v)}=g_u+g_v \qquad(uv\in F\text{ in }K). \label{eq:grid-reference-difference} \end{equation}
+Signs can be omitted in these bit calculations because \(-x=x\) modulo two.
+
+If \(S_K\) does not exchange the axes, the two reference labelings differ by zero on horizontal edges and by \(\epsilon\) on vertical edges.
+A vertical edge in column \(x\) becomes vertical in column \(\pm x+a\), so its two reference bits differ by \(x+(\pm x+a)=\epsilon\) modulo two.
+Set \(g_v=(\epsilon y(v))\bmod2\).
+Its endpoint sum is zero on a horizontal edge and \(\epsilon\) on a vertical edge, so \eqref{eq:grid-reference-difference} holds.
+
+If \(S_K\) exchanges the axes, an original horizontal edge at row \(y\) becomes vertical in column \(\pm y+a\), while an original vertical edge becomes horizontal.
+The reference-label difference is therefore \(y+\epsilon\) on a horizontal edge and \(x\) on a vertical edge.
+Set \(g_v=(x(v)y(v)+\epsilon x(v))\bmod2\).
+Across a horizontal edge its endpoint sum is \(y+\epsilon\), and across a vertical edge it is \(x\).
+Again \eqref{eq:grid-reference-difference} holds.
+
+Now generate the two output distributions using random bits related by
+\begin{equation} Z'_{\varphi(v)}=Z_v+g_v \qquad(v\in W). \label{eq:grid-matched-random-bits} \end{equation}
+Adding fixed bits to independent uniform bits leaves them independent and uniform.
+The components have disjoint endpoint sets, so we can make this choice on all components at once and choose the remaining primed vertex bits independently.
+For every observed edge \(uv\), equations \eqref{eq:grid-reference-difference} and \eqref{eq:grid-matched-random-bits} give
+\[ \eta'_{\varphi(u)\varphi(v)}+Z'_{\varphi(u)}+Z'_{\varphi(v)}=\eta_{uv}+Z_u+Z_v. \]
+Thus corresponding observed edge labels are equal under this joint construction.
+The view isomorphism preserves the port slots and the unused slots, so the full marked output vectors are equal as well.
+Each side has the required uniform outcome distribution, by Section 2.
+Their entire joint marginals therefore agree, proving non-signaling locality at most three.
+
+\section{\texorpdfstring{5. Why deterministic algorithms need \(\Omega(\sqrt n)\) rounds}{5. Why deterministic algorithms need Omega(sqrt(n)) rounds}}\label{grid-lower-bound}
+
+\subsection{5.1. The parity contradiction on an odd torus}
+
+Let \(m\ge5\) be odd and let \(H=C_m\mathbin{\square}C_m\).
+Think of \(H\) as an \(m\)-by-\(m\) grid with opposite sides joined.
+It has \(m^2\) unit faces, and each edge belongs to exactly two of them.
+Suppose an edge labeling satisfied XOR one around every face.
+Adding the \(m^2\) equations modulo two would give zero on the left, since every edge bit appears twice, and one on the right, since \(m^2\) is odd.
+This is impossible.
+Thus no consistent assignment of edge bits satisfies all face equations on \(H\).
+
+We will use this contradiction to prove the lower bound on square grids with boundary.
+The random outcome is not evaluated on the torus.
+
+\subsection{5.2. Comparing torus neighborhoods with square-grid inputs}
+
+Suppose a deterministic algorithm \(A\) solves the LCL on every \(n\)-vertex square grid and every identifier and port assignment in \(t=t(n)\) rounds.
+Let \(n\ge144\) be a perfect square and suppose, for a contradiction, that
+\begin{equation} t+3\le\sqrt n/4. \label{eq:grid-fast-algorithm} \end{equation}
+Let \(m\) be the largest odd integer at most \(\sqrt n\), so \(m\ge\sqrt n-1\) and \(m^2\le n\).
+Use the torus \(H=C_m\mathbin{\square}C_m\), give it distinct identifiers from \([n]\), and choose any port numbering.
+In all its local views, use the same public size parameter \(n\) as on the square-grid inputs.
+The torus may have fewer than \(n\) vertices.
+We do not assume that \(A\) is correct on it; we use only local views that occur in actual \(n\)-vertex square grids.
+
+Put \(r=t+3\).
+The assumed bound gives \(2r+1<m\).
+A radius-\(r\) neighborhood in the torus therefore has exactly the same vertices and edges as a radius-\(r\) neighborhood in the square lattice.
+In more detail, two vertices of such a lattice ball cannot be identified modulo \(m\), and an extra torus edge would require \(m\le2r+1\).
+
+This neighborhood fits in the interior of \(G_n\).
+Place its center at
+\[ \left(\left\lfloor\frac{\sqrt n-1}{2}\right\rfloor,\left\lfloor\frac{\sqrt n-1}{2}\right\rfloor\right). \]
+Every coordinate changes by at most \(r\le\sqrt n/4\) inside the ball.
+For \(n\ge144\), this leaves room before the physical boundary of the square grid.
+Copy all identifiers and port information needed by the local views, and give the remaining square-grid vertices distinct unused identifiers from \([n]\).
+Choose the remaining port numbers arbitrarily.
+This gives a genuine input with exactly \(n\) vertices.
+The extra layers in \(r=t+3\) also preserve the degree and port information needed at the four vertices of a face.
+
+Every radius-\(t\) view at a torus vertex is therefore a view that can occur at a vertex of a valid square-grid input with public size \(n\).
+Apply the deterministic output rule of \(A\) to that view and call the resulting port tuple \(Y_v\).
+Doing this for every torus vertex fixes one output assignment \(Y\) on \(H\).
+This definition does not require \(A\) to be correct on a torus.
+
+\subsection{5.3. Every face forces a constraint on that same output}
+
+Fix a torus face \(Q\) and choose one of its vertices \(v\).
+All four vertices of \(Q\) are within distance two of \(v\).
+The radius-\(t\) views determining their outputs, including the needed boundary information, are contained in the radius-\(t+3\) view of \(v\).
+Embed that view in an \(n\)-vertex square grid as above, preserving identifiers, ports, degrees, and the public size.
+The four outputs produced there by \(A\) are exactly the four tuples \(Y_w\) already fixed on the torus face.
+
+Correctness on this genuine input implies agreement of the endpoint bits on all four edges of \(Q\), and XOR one around \(Q\).
+The argument applies to every torus face.
+A different square-grid input may be used for each face, but the assignment \(Y\) was fixed before these comparisons.
+Hence all the equations concern the same torus output assignment.
+Every torus edge belongs to a face, so endpoint agreement gives a single bit \(X_e\) on every edge, and every face has XOR one.
+This contradicts Section 5.1.
+
+We conclude that \(t(n)>\sqrt n/4-3\) for every perfect-square \(n\ge144\), under the stated input-view convention.
+In particular, the deterministic round complexity is \(\Omega(\sqrt n)\).
+This argument preserves exact size information and numerical identifiers and uses no compass input.
+
+\section{6. A matching deterministic upper bound}\label{grid-upper-bound}
+
+The grid has diameter \(2(\sqrt n-1)\).
+In \(O(\sqrt n)\) rounds, every vertex can gather the whole graph, including identifiers and port numbers.
+Order the edges lexicographically by the pairs of their endpoint identifiers, putting the smaller identifier first, and enumerate all bit assignments in that order.
+Choose the first assignment satisfying every face equation.
+Such an assignment exists by Section 2.
+Every vertex sees the same complete input and uses the same ordering, so they choose the same assignment and copy its edge bits to their incident ports.
+The search is finite, and the LOCAL model does not charge for its computation time.
+This gives a deterministic \(O(\sqrt n)\)-round algorithm and proves the claimed \(\Theta(\sqrt n)\) complexity.
+
+\section{7. Graph families and the translation theorem}\label{grid-relation-to-part-one}
+
+The example shows that a distribution with constant non-signaling locality, constant dependence range, and zero error can still require \(\Theta(\sqrt n)\) rounds for deterministic solutions when the non-signaling comparisons are restricted to grids.
+Square grids have Assouad--Nagata dimension two, so this rules out a general dimension-two extension based only on those grid comparisons.
+Part I requires dimension-one metric control and makes no such dimension-two claim.
+
+There is also a reason why the grid outcome cannot simply be extended to all bounded-degree graphs while retaining a fixed non-signaling radius.
+Take a sufficiently large odd integer \(\sqrt n\) and the torus \(C_{\sqrt n}\mathbin{\square}C_{\sqrt n}\), which has exactly \(n\) vertices.
+For any fixed radius, the neighborhoods needed by each face and its edge-consistency tests fit inside a genuine \(n\)-vertex square grid, with the same identifiers, ports, and public size.
+An all-graphs non-signaling outcome that is always correct on square grids would make each of these torus tests pass with probability one.
+There are finitely many tests, so they would all pass simultaneously with probability one.
+Section 5.1 shows that this is impossible.
+This separate argument uses only non-signaling; finite dependence is not needed for it.
+
+The result proved here concerns full square grids with boundary and all assignments of identifiers and ports.
+We do not extend the no-compass statement to arbitrary lattice subgraphs with holes or deleted edges.
+The LCL framework is due to Naor and Stockmeyer, and the grid setting is studied by Brandt et al.; the references below give these sources.
+The proofs in Part II are complete and do not use a grid classification theorem.
+
+\clearpage
+\section{References}
+\begin{enumerate}
+\item Alkida Balliu, Filippo Casagrande, Francesco d'Amore, Massimo Equi, Barbara Keller, Henrik Lievonen, Dennis Olivetti, Gustav Schmid, and Jukka Suomela.
+\emph{Distributed Quantum Advantage in Locally Checkable Labeling Problems}.
+SODA 2026, pp. 1268--1308.
+Expanded version \href{https://arxiv.org/abs/2504.05191v2}{arXiv:2504.05191v2}, 2026.
+Definition and theorem numbers refer to this version.
+\item Francesco d'Amore and Henrik Lievonen.
+\emph{Superlogarithmic Gap Result for LCLs on Trees in Quantum-LOCAL}.
+\href{https://arxiv.org/abs/2608.16854v1}{arXiv:2608.16854v1}, 2026.
+\item Marc Distel.
+\emph{Proper Minor-Closed Classes of Graphs Have Assouad--Nagata Dimension 2}.
+\href{https://arxiv.org/abs/2308.10377v3}{arXiv:2308.10377v3}, 2025.
+Cited numbering refers to this version.
+\item Chun-Hung Liu.
+\emph{Assouad--Nagata dimension of minor-closed metrics}.
+Proceedings of the London Mathematical Society 130 (2025), e70032.
+\href{https://arxiv.org/abs/2308.12273v5}{arXiv:2308.12273v5}; \href{https://doi.org/10.1112/plms.70032}{doi:10.1112/plms.70032}.
+\item Mohsen Ghaffari and Christoph Grunau.
+\emph{Near-Optimal Deterministic Network Decomposition and Ruling Set, and Improved MIS}.
+FOCS 2024.
+\href{https://arxiv.org/abs/2410.19516v1}{arXiv:2410.19516v1}.
+\item V\'aclav Rozho\v{n} and Mohsen Ghaffari.
+\emph{Polylogarithmic-Time Deterministic Network Decomposition and Distributed Derandomization}.
+STOC 2020.
+\href{https://arxiv.org/abs/1907.10937}{arXiv:1907.10937}.
+\item Moni Naor and Larry Stockmeyer.
+\emph{What Can Be Computed Locally?} SIAM Journal on Computing 24(6):1259--1277, 1995.
+\href{https://doi.org/10.1137/S0097539793254571}{doi:10.1137/S0097539793254571}.
+\item Sebastian Brandt, Juho Hirvonen, Janne H. Korhonen, Tuomo Lempi\"ainen, Patric R. J. \"Osterg\aa rd, Christopher Purcell, Joel Rybicki, Jukka Suomela, and Przemys\l aw Uzna\'nski.
+\emph{LCL problems on grids}.
+PODC 2017.
+\href{https://arxiv.org/abs/1702.05456v2}{arXiv:1702.05456v2}.
+\end{enumerate}
+
+\end{document}
